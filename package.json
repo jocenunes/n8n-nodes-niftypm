@@ -1,0 +1,66 @@
+{
+  "name": "n8n-nodes-niftypm",
+  "version": "0.1.0",
+  "description": "n8n node for Nifty PM - Project Management Integration",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "nifty",
+    "niftypm",
+    "project-management"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/jocenunes/n8n-nodes-niftypm",
+  "author": {
+    "name": "Joce Nunes",
+    "url": "https://github.com/jocenunes"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jocenunes/n8n-nodes-niftypm.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jocenunes/n8n-nodes-niftypm/issues"
+  },
+  "engines": {
+    "node": ">=18.10",
+    "pnpm": ">=9.1"
+  },
+  "packageManager": "pnpm@9.1.4",
+  "main": "index.js",
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "build": "tsc && gulp build:icons",
+    "dev": "tsc --watch",
+    "format": "prettier nodes credentials --write",
+    "lint": "eslint nodes credentials package.json",
+    "lint:fix": "eslint nodes credentials package.json --fix",
+    "prepublishOnly": "pnpm build && pnpm lint"
+  },
+  "files": [
+    "dist"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/NiftyPmOAuth2Api.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/NiftyPm/NiftyPm.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^7.15.0",
+    "@typescript-eslint/parser": "^7.15.0",
+    "eslint": "^8.56.0",
+    "eslint-plugin-n8n-nodes-base": "^1.16.1",
+    "gulp": "^4.0.2",
+    "n8n-workflow": "*",
+    "prettier": "^3.3.2",
+    "typescript": "^5.5.3"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
+}

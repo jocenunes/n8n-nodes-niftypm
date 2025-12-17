@@ -1,0 +1,21 @@
+{
+  "project": {
+    "name": "n8n-nodes-niftypm",
+    "description": "n8n community node for Nifty PM project management"
+  },
+  "skills": [
+    "skills/n8n-node-dev.md"
+  ],
+  "commands": [
+    "commands/n8n-build.md",
+    "commands/n8n-docker-test.md",
+    "commands/n8n-add-resource.md",
+    "commands/n8n-verify.md"
+  ],
+  "agents": [
+    "agents/n8n-node-architect.md",
+    "agents/n8n-node-builder.md",
+    "agents/n8n-node-debugger.md",
+    "agents/n8n-node-reviewer.md"
+  ]
+}

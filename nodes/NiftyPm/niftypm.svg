@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" width="60" height="60">
+  <defs>
+    <linearGradient id="niftyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="60" height="60" rx="12" fill="url(#niftyGradient)"/>
+  <g fill="white">
+    <path d="M18 16h24v4H18zM18 24h20v4H18zM18 32h16v4H18zM18 40h12v4H18z"/>
+    <circle cx="44" cy="40" r="6" fill="white" opacity="0.9"/>
+    <path d="M42 40l2 2 4-4" stroke="url(#niftyGradient)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.idea/
+.vscode/
+*.tgz
+
+# Docker data
+docker/n8n-data/database.sqlite
+docker/n8n-data/.n8n/
+docker/n8n-data/nodes/
+
+# Test scripts
+test-api.sh
+
+# Environment
+.env
+.env.*

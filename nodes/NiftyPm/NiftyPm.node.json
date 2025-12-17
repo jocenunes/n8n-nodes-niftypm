@@ -1,0 +1,18 @@
+{
+	"node": "n8n-nodes-base.niftyPm",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Productivity"],
+	"resources": {
+		"primaryDocumentation": [
+			{
+				"url": "https://developers.niftypm.com/"
+			}
+		],
+		"credentialDocumentation": [
+			{
+				"url": "https://developers.niftypm.com/reference/authentication"
+			}
+		]
+	}
+}
