@@ -63,10 +63,21 @@ export const tagOperations: INodeProperties[] = [
 							{
 								type: 'rootProperty',
 								properties: {
-									property: 'labels',
+									property: 'items',
 								},
 							},
 						],
+					},
+					operations: {
+						pagination: {
+							type: 'offset',
+							properties: {
+								limitParameter: 'limit',
+								offsetParameter: 'offset',
+								pageSize: 100,
+								type: 'query',
+							},
+						},
 					},
 				},
 			},
@@ -103,6 +114,22 @@ export const tagFields: INodeProperties[] = [
 				operation: ['getMany'],
 			},
 		},
+		routing: {
+			send: {
+				paginate: '={{$value}}',
+			},
+			operations: {
+				pagination: {
+					type: 'offset',
+					properties: {
+						limitParameter: 'limit',
+						offsetParameter: 'offset',
+						pageSize: 100,
+						type: 'query',
+					},
+				},
+			},
+		},
 	},
 	{
 		displayName: 'Limit',
@@ -126,6 +153,39 @@ export const tagFields: INodeProperties[] = [
 				type: 'query',
 				property: 'limit',
 			},
+			output: {
+				postReceive: [
+					{
+						type: 'limit',
+						properties: {
+							maxResults: '={{$value}}',
+						},
+					},
+				],
+			},
+		},
+	},
+	{
+		displayName: 'Offset',
+		name: 'offset',
+		type: 'number',
+		default: 0,
+		description: 'Number of records to skip (pagination)',
+		typeOptions: {
+			minValue: 0,
+		},
+		displayOptions: {
+			show: {
+				resource: ['tag'],
+				operation: ['getMany'],
+				returnAll: [false],
+			},
+		},
+		routing: {
+			send: {
+				type: 'query',
+				property: 'offset',
+			},
 		},
 	},
 	{
@@ -141,19 +201,6 @@ export const tagFields: INodeProperties[] = [
 			},
 		},
 		options: [
-			{
-				displayName: 'Offset',
-				name: 'offset',
-				type: 'number',
-				default: 0,
-				description: 'Number of records to skip',
-				routing: {
-					send: {
-						type: 'query',
-						property: 'offset',
-					},
-				},
-			},
 			{
 				displayName: 'Type',
 				name: 'type',

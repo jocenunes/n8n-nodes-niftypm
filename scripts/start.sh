@@ -76,6 +76,7 @@ if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
             -e N8N_EDITOR_BASE_URL=https://n8nlocal.ecombase.shop/ \
             -e N8N_ENCRYPTION_KEY="$N8N_ENCRYPTION_KEY" \
             -e N8N_PROXY_HOPS=1 \
+            -e N8N_SECURE_COOKIE=false \
             "$IMAGE_NAME"
     fi
 else
@@ -90,6 +91,7 @@ else
         -e N8N_EDITOR_BASE_URL=https://n8nlocal.ecombase.shop/ \
         -e N8N_ENCRYPTION_KEY="$N8N_ENCRYPTION_KEY" \
         -e N8N_PROXY_HOPS=1 \
+        -e N8N_SECURE_COOKIE=false \
         "$IMAGE_NAME"
 fi
 
@@ -97,6 +99,18 @@ echo -e "${GREEN}>>> n8n rodando em http://localhost:5678${NC}"
 
 # Inicia tunnel se solicitado
 if [ "$TUNNEL" = true ]; then
+    echo -e "${YELLOW}>>> Iniciando OAuth Proxy (porta 5679)...${NC}"
+
+    # Mata proxy anterior se existir
+    pkill -f "oauth-proxy.js" 2>/dev/null || true
+    sleep 1
+
+    # Inicia o proxy OAuth que corrige o problema de + -> espaço no state
+    nohup node "$SCRIPT_DIR/oauth-proxy.js" > /tmp/oauth-proxy.log 2>&1 &
+
+    echo -e "${GREEN}>>> OAuth Proxy iniciado na porta 5679${NC}"
+    echo -e "${YELLOW}    Logs em: /tmp/oauth-proxy.log${NC}"
+
     echo -e "${YELLOW}>>> Iniciando Cloudflare Tunnel...${NC}"
 
     # Mata tunnel anterior se existir

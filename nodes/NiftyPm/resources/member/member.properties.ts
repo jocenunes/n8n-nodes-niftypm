@@ -24,28 +24,21 @@ export const memberOperations: INodeProperties[] = [
 					},
 				},
 			},
-			{
-				name: 'Get Many',
-				value: 'getMany',
-				action: 'Get many members',
-				description: 'Get a list of all team members',
-				routing: {
-					request: {
-						method: 'GET',
-						url: '/members',
-					},
-					output: {
-						postReceive: [
-							{
-								type: 'rootProperty',
-								properties: {
-									property: 'members',
-								},
-							},
-						],
+		{
+			name: 'Get Many',
+			value: 'getMany',
+			action: 'Get many members',
+			description: 'Get a list of all team members',
+			routing: {
+				request: {
+					method: 'GET',
+					url: '/members',
+					qs: {
+						offset: 0,
 					},
 				},
 			},
+		},
 		],
 		default: 'getMany',
 	},

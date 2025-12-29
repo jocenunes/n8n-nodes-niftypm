@@ -32,7 +32,7 @@ export const projectOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'DELETE',
-						url: '=/projects/{{$parameter["projectId"]}}',
+						url: '=/projects/{{ typeof $parameter["projectId"] === "object" ? $parameter["projectId"].value : $parameter["projectId"] }}',
 					},
 				},
 			},
@@ -44,32 +44,43 @@ export const projectOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'GET',
-						url: '=/projects/{{$parameter["projectId"]}}',
+						url: '=/projects/{{ typeof $parameter["projectId"] === "object" ? $parameter["projectId"].value : $parameter["projectId"] }}',
 					},
 				},
 			},
-			{
-				name: 'Get Many',
-				value: 'getMany',
-				action: 'Get many projects',
-				description: 'Get a list of projects',
-				routing: {
-					request: {
-						method: 'GET',
-						url: '/projects',
-					},
-					output: {
-						postReceive: [
-							{
-								type: 'rootProperty',
-								properties: {
-									property: 'projects',
-								},
+		{
+			name: 'Get Many',
+			value: 'getMany',
+			action: 'Get many projects',
+			description: 'Get a list of projects',
+			routing: {
+				request: {
+					method: 'GET',
+					url: '/projects',
+				},
+				output: {
+					postReceive: [
+						{
+							type: 'rootProperty',
+							properties: {
+								property: 'projects',
 							},
-						],
+						},
+					],
+				},
+				operations: {
+					pagination: {
+						type: 'offset',
+						properties: {
+							limitParameter: 'limit',
+							offsetParameter: 'offset',
+							pageSize: 100,
+							type: 'query',
+						},
 					},
 				},
 			},
+		},
 			{
 				name: 'Invite Member',
 				value: 'inviteMember',
@@ -78,7 +89,19 @@ export const projectOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'POST',
-						url: '=/projects/{{$parameter["projectId"]}}/invite',
+						url: '=/projects/{{ typeof $parameter["projectId"] === "object" ? $parameter["projectId"].value : $parameter["projectId"] }}/invite',
+					},
+				},
+			},
+			{
+				name: 'Leave',
+				value: 'leave',
+				action: 'Leave a project',
+				description: 'Leave a project as the current user',
+				routing: {
+					request: {
+						method: 'POST',
+						url: '=/projects/{{ typeof $parameter["projectId"] === "object" ? $parameter["projectId"].value : $parameter["projectId"] }}/leave',
 					},
 				},
 			},
@@ -90,7 +113,7 @@ export const projectOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'POST',
-						url: '=/projects/{{$parameter["projectId"]}}/start',
+						url: '=/projects/{{ typeof $parameter["projectId"] === "object" ? $parameter["projectId"].value : $parameter["projectId"] }}/start',
 					},
 				},
 			},
@@ -102,7 +125,7 @@ export const projectOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'PUT',
-						url: '=/projects/{{$parameter["projectId"]}}',
+						url: '=/projects/{{ typeof $parameter["projectId"] === "object" ? $parameter["projectId"].value : $parameter["projectId"] }}',
 					},
 				},
 			},
@@ -127,6 +150,22 @@ export const projectFields: INodeProperties[] = [
 				operation: ['getMany'],
 			},
 		},
+		routing: {
+			send: {
+				paginate: '={{$value}}',
+			},
+			operations: {
+				pagination: {
+					type: 'offset',
+					properties: {
+						limitParameter: 'limit',
+						offsetParameter: 'offset',
+						pageSize: 100,
+						type: 'query',
+					},
+				},
+			},
+		},
 	},
 	{
 		displayName: 'Limit',
@@ -149,6 +188,39 @@ export const projectFields: INodeProperties[] = [
 			send: {
 				type: 'query',
 				property: 'limit',
+			},
+			output: {
+				postReceive: [
+					{
+						type: 'limit',
+						properties: {
+							maxResults: '={{$value}}',
+						},
+					},
+				],
+			},
+		},
+	},
+	{
+		displayName: 'Offset',
+		name: 'offset',
+		type: 'number',
+		default: 0,
+		description: 'Number of records to skip (pagination)',
+		typeOptions: {
+			minValue: 0,
+		},
+		displayOptions: {
+			show: {
+				resource: ['project'],
+				operation: ['getMany'],
+				returnAll: [false],
+			},
+		},
+		routing: {
+			send: {
+				type: 'query',
+				property: 'offset',
 			},
 		},
 	},
@@ -175,19 +247,6 @@ export const projectFields: INodeProperties[] = [
 					send: {
 						type: 'query',
 						property: 'archived',
-					},
-				},
-			},
-			{
-				displayName: 'Offset',
-				name: 'offset',
-				type: 'number',
-				default: 0,
-				description: 'Number of records to skip',
-				routing: {
-					send: {
-						type: 'query',
-						property: 'offset',
 					},
 				},
 			},
@@ -243,7 +302,7 @@ export const projectFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['project'],
-				operation: ['get', 'delete', 'update', 'start', 'inviteMember'],
+				operation: ['get', 'delete', 'update', 'start', 'inviteMember', 'leave'],
 			},
 		},
 		modes: [
@@ -388,27 +447,61 @@ export const projectFields: INodeProperties[] = [
 		],
 	},
 
-	// ----------------------------------
-	//         project: inviteMember
-	// ----------------------------------
 	{
-		displayName: 'Member IDs',
+		displayName: 'Members',
 		name: 'members',
-		type: 'string',
+		type: 'fixedCollection',
+		typeOptions: {
+			multipleValues: true,
+		},
 		required: true,
-		default: '',
-		description: 'Comma-separated list of member IDs to invite',
+		default: {},
+		placeholder: 'Add Member',
+		description: 'Members to invite to the project',
 		displayOptions: {
 			show: {
 				resource: ['project'],
 				operation: ['inviteMember'],
 			},
 		},
+		options: [
+			{
+				name: 'memberValues',
+				displayName: 'Member',
+				values: [
+					{
+						displayName: 'Member',
+						name: 'id',
+						type: 'resourceLocator',
+						required: true,
+						default: { mode: 'list', value: '' },
+						description: 'The member to invite',
+						modes: [
+							{
+								displayName: 'From List',
+								name: 'list',
+								type: 'list',
+								typeOptions: {
+									searchListMethod: 'getMembers',
+									searchable: true,
+								},
+							},
+							{
+								displayName: 'By ID',
+								name: 'id',
+								type: 'string',
+								placeholder: 'e.g. abc123',
+							},
+						],
+					},
+				],
+			},
+		],
 		routing: {
 			send: {
 				type: 'body',
 				property: 'members',
-				value: '={{$value.split(",").map(id => id.trim())}}',
+				value: '={{ $value.memberValues ? $value.memberValues.map(m => typeof m.id === "object" ? m.id.value : m.id) : [] }}',
 			},
 		},
 	},

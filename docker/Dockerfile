@@ -1,23 +1,21 @@
-FROM n8nio/n8n:2.1.0
+FROM n8nio/n8n:2.1.4
 
 USER root
 
-# Create directory for custom nodes (outside .n8n so volume doesn't overwrite)
-RUN mkdir -p /custom-nodes/node_modules/n8n-nodes-niftypm/dist
+# Copy compiled node files to a staging location
+RUN mkdir -p /custom-node
+COPY dist/ /custom-node/
 
-# Initialize package.json in nodes directory
-RUN echo '{"name":"n8n-custom-nodes","version":"1.0.0","dependencies":{}}' > /custom-nodes/package.json
-
-# Copy package.json of the node
-COPY package.json /custom-nodes/node_modules/n8n-nodes-niftypm/
-
-# Copy dist folder
-COPY dist/ /custom-nodes/node_modules/n8n-nodes-niftypm/dist/
-
-# Set ownership
-RUN chown -R node:node /custom-nodes
-
-# Set environment variable to tell n8n where custom nodes are
-ENV N8N_CUSTOM_EXTENSIONS=/custom-nodes
+# Create entrypoint script that copies files to ~/.n8n/custom/ at runtime
+# This is necessary because ~/.n8n is typically a mounted volume
+RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
+    echo 'mkdir -p /home/node/.n8n/custom' >> /docker-entrypoint.sh && \
+    echo 'cp -r /custom-node/* /home/node/.n8n/custom/' >> /docker-entrypoint.sh && \
+    echo 'chown -R node:node /home/node/.n8n/custom' >> /docker-entrypoint.sh && \
+    echo 'exec n8n "$@"' >> /docker-entrypoint.sh && \
+    chmod +x /docker-entrypoint.sh && \
+    chown -R node:node /custom-node
 
 USER node
+
+ENTRYPOINT ["/docker-entrypoint.sh"]

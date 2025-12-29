@@ -13,6 +13,18 @@ export const portfolioOperations: INodeProperties[] = [
 		},
 		options: [
 			{
+				name: 'Add Members',
+				value: 'addMembers',
+				action: 'Add members to portfolio',
+				description: 'Add members to a portfolio',
+				routing: {
+					request: {
+						method: 'PUT',
+						url: '=/subteams/{{ typeof $parameter["portfolioId"] === "object" ? $parameter["portfolioId"].value : $parameter["portfolioId"] }}/members',
+					},
+				},
+			},
+			{
 				name: 'Create',
 				value: 'create',
 				action: 'Create a portfolio',
@@ -20,7 +32,7 @@ export const portfolioOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'POST',
-						url: '/portfolios',
+						url: '/subteams',
 					},
 				},
 			},
@@ -32,7 +44,7 @@ export const portfolioOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'DELETE',
-						url: '=/portfolios/{{$parameter["portfolioId"]}}',
+						url: '=/subteams/{{ typeof $parameter["portfolioId"] === "object" ? $parameter["portfolioId"].value : $parameter["portfolioId"] }}',
 					},
 				},
 			},
@@ -44,7 +56,7 @@ export const portfolioOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'GET',
-						url: '=/portfolios/{{$parameter["portfolioId"]}}',
+						url: '=/subteams/{{ typeof $parameter["portfolioId"] === "object" ? $parameter["portfolioId"].value : $parameter["portfolioId"] }}',
 					},
 				},
 			},
@@ -56,14 +68,14 @@ export const portfolioOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'GET',
-						url: '/portfolios',
+						url: '/subteams',
 					},
 					output: {
 						postReceive: [
 							{
 								type: 'rootProperty',
 								properties: {
-									property: 'portfolios',
+									property: 'subteams',
 								},
 							},
 						],
@@ -78,7 +90,7 @@ export const portfolioOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'GET',
-						url: '=/portfolios/{{$parameter["portfolioId"]}}/projects',
+						url: '=/projects?subteam_id={{ typeof $parameter["portfolioId"] === "object" ? $parameter["portfolioId"].value : $parameter["portfolioId"] }}',
 					},
 					output: {
 						postReceive: [
@@ -93,6 +105,30 @@ export const portfolioOperations: INodeProperties[] = [
 				},
 			},
 			{
+				name: 'Leave',
+				value: 'leave',
+				action: 'Leave a portfolio',
+				description: 'Leave a portfolio as the current user',
+				routing: {
+					request: {
+						method: 'POST',
+						url: '=/subteams/{{ typeof $parameter["portfolioId"] === "object" ? $parameter["portfolioId"].value : $parameter["portfolioId"] }}/leave',
+					},
+				},
+			},
+			{
+				name: 'Remove Members',
+				value: 'removeMembers',
+				action: 'Remove members from portfolio',
+				description: 'Remove members from a portfolio',
+				routing: {
+					request: {
+						method: 'DELETE',
+						url: '=/subteams/{{ typeof $parameter["portfolioId"] === "object" ? $parameter["portfolioId"].value : $parameter["portfolioId"] }}/members',
+					},
+				},
+			},
+			{
 				name: 'Update',
 				value: 'update',
 				action: 'Update a portfolio',
@@ -100,7 +136,7 @@ export const portfolioOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'PUT',
-						url: '=/portfolios/{{$parameter["portfolioId"]}}',
+						url: '=/subteams/{{ typeof $parameter["portfolioId"] === "object" ? $parameter["portfolioId"].value : $parameter["portfolioId"] }}',
 					},
 				},
 			},
@@ -179,20 +215,93 @@ export const portfolioFields: INodeProperties[] = [
 		],
 	},
 
-	// ----------------------------------
-	//         portfolio: get, update, delete, getProjects
-	// ----------------------------------
 	{
-		displayName: 'Portfolio ID',
+		displayName: 'Portfolio',
 		name: 'portfolioId',
-		type: 'string',
+		type: 'resourceLocator',
 		required: true,
-		default: '',
-		description: 'The ID of the portfolio',
+		default: { mode: 'list', value: '' },
+		description: 'The portfolio to operate on',
 		displayOptions: {
 			show: {
 				resource: ['portfolio'],
-				operation: ['get', 'update', 'delete', 'getProjects'],
+				operation: ['get', 'update', 'delete', 'getProjects', 'addMembers', 'removeMembers', 'leave'],
+			},
+		},
+		modes: [
+			{
+				displayName: 'From List',
+				name: 'list',
+				type: 'list',
+				typeOptions: {
+					searchListMethod: 'getPortfolios',
+					searchable: true,
+				},
+			},
+			{
+				displayName: 'By ID',
+				name: 'id',
+				type: 'string',
+				placeholder: 'e.g. abc123',
+			},
+		],
+	},
+
+	{
+		displayName: 'Members',
+		name: 'members',
+		type: 'fixedCollection',
+		typeOptions: {
+			multipleValues: true,
+		},
+		required: true,
+		default: {},
+		placeholder: 'Add Member',
+		description: 'Members to add or remove from the portfolio',
+		displayOptions: {
+			show: {
+				resource: ['portfolio'],
+				operation: ['addMembers', 'removeMembers'],
+			},
+		},
+		options: [
+			{
+				name: 'memberValues',
+				displayName: 'Member',
+				values: [
+					{
+						displayName: 'Member',
+						name: 'id',
+						type: 'resourceLocator',
+						required: true,
+						default: { mode: 'list', value: '' },
+						description: 'The member to add/remove',
+						modes: [
+							{
+								displayName: 'From List',
+								name: 'list',
+								type: 'list',
+								typeOptions: {
+									searchListMethod: 'getMembers',
+									searchable: true,
+								},
+							},
+							{
+								displayName: 'By ID',
+								name: 'id',
+								type: 'string',
+								placeholder: 'e.g. abc123',
+							},
+						],
+					},
+				],
+			},
+		],
+		routing: {
+			send: {
+				type: 'body',
+				property: 'members',
+				value: '={{ $value.memberValues ? $value.memberValues.map(m => typeof m.id === "object" ? m.id.value : m.id) : [] }}',
 			},
 		},
 	},

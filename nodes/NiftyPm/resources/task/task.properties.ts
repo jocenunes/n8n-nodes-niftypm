@@ -32,7 +32,7 @@ export const taskOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'POST',
-						url: '=/tasks/{{$parameter["taskId"]}}/clone',
+						url: '=/tasks/{{ typeof $parameter["taskId"] === "object" ? $parameter["taskId"].value : $parameter["taskId"] }}/clone',
 					},
 				},
 			},
@@ -44,7 +44,7 @@ export const taskOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'POST',
-						url: '=/tasks/{{$parameter["taskId"]}}/complete',
+						url: '=/tasks/{{ typeof $parameter["taskId"] === "object" ? $parameter["taskId"].value : $parameter["taskId"] }}/complete',
 					},
 				},
 			},
@@ -80,7 +80,7 @@ export const taskOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'POST',
-						url: '=/tasks/{{$parameter["taskId"]}}/subtasks',
+						url: '=/tasks/{{ typeof $parameter["taskId"] === "object" ? $parameter["taskId"].value : $parameter["taskId"] }}/subtasks',
 					},
 				},
 			},
@@ -104,7 +104,7 @@ export const taskOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'GET',
-						url: '=/tasks/{{$parameter["taskId"]}}',
+						url: '=/tasks/{{ typeof $parameter["taskId"] === "object" ? $parameter["taskId"].value : $parameter["taskId"] }}',
 					},
 				},
 			},
@@ -130,50 +130,72 @@ export const taskOperations: INodeProperties[] = [
 					},
 				},
 			},
-			{
-				name: 'Get Many',
-				value: 'getMany',
-				action: 'Get many tasks',
-				description: 'Get a list of tasks',
-				routing: {
-					request: {
-						method: 'GET',
-						url: '/tasks',
-					},
-					output: {
-						postReceive: [
-							{
-								type: 'rootProperty',
-								properties: {
-									property: 'tasks',
-								},
+		{
+			name: 'Get Many',
+			value: 'getMany',
+			action: 'Get many tasks',
+			description: 'Get a list of tasks',
+			routing: {
+				request: {
+					method: 'GET',
+					url: '/tasks',
+				},
+				output: {
+					postReceive: [
+						{
+							type: 'rootProperty',
+							properties: {
+								property: 'tasks',
 							},
-						],
+						},
+					],
+				},
+				operations: {
+					pagination: {
+						type: 'offset',
+						properties: {
+							limitParameter: 'limit',
+							offsetParameter: 'offset',
+							pageSize: 100,
+							type: 'query',
+						},
 					},
 				},
 			},
-			{
-				name: 'Get Personal',
-				value: 'getPersonal',
-				action: 'Get personal tasks',
-				description: 'Get personal tasks',
-				routing: {
-					request: {
-						method: 'GET',
-						url: '/tasks/personal',
-					},
-					output: {
-						postReceive: [
-							{
-								type: 'rootProperty',
-								properties: {
-									property: 'tasks',
-								},
+		},
+		{
+			name: 'Get Personal',
+			value: 'getPersonal',
+			action: 'Get personal tasks',
+			description: 'Get personal tasks',
+			routing: {
+				request: {
+					method: 'GET',
+					url: '/tasks/personal',
+				},
+				output: {
+					postReceive: [
+						{
+							type: 'rootProperty',
+							properties: {
+								property: 'tasks',
 							},
-						],
+						},
+					],
+				},
+				operations: {
+					pagination: {
+						type: 'offset',
+						properties: {
+							limitParameter: 'limit',
+							offsetParameter: 'offset',
+							pageSize: 100,
+							type: 'query',
+						},
 					},
 				},
 			},
+		},
 			{
 				name: 'Get Subtasks',
 				value: 'getSubtasks',
@@ -211,33 +233,105 @@ export const taskOperations: INodeProperties[] = [
 					},
 				},
 			},
-			{
-				name: 'Uncomplete',
-				value: 'uncomplete',
-				action: 'Uncomplete a task',
-				description: 'Mark a task as not completed',
-				routing: {
-					request: {
-						method: 'DELETE',
-						url: '=/tasks/{{$parameter["taskId"]}}/complete',
-					},
+		{
+			name: 'Add Labels',
+			value: 'addLabels',
+			action: 'Add labels to task',
+			description: 'Add labels/tags to a task',
+			routing: {
+				request: {
+					method: 'PUT',
+					url: '=/tasks/{{ typeof $parameter["taskId"] === "object" ? $parameter["taskId"].value : $parameter["taskId"] }}/labels',
 				},
 			},
-			{
-				name: 'Update',
-				value: 'update',
-				action: 'Update a task',
-				description: 'Update a task',
-				routing: {
-					request: {
-						method: 'PUT',
-						url: '=/tasks/{{$parameter["taskId"]}}',
-					},
+		},
+		{
+			name: 'Archive',
+			value: 'archive',
+			action: 'Archive a task',
+			description: 'Archive a task',
+			routing: {
+				request: {
+					method: 'POST',
+					url: '=/tasks/{{ typeof $parameter["taskId"] === "object" ? $parameter["taskId"].value : $parameter["taskId"] }}/archive',
 				},
 			},
-		],
-		default: 'getMany',
-	},
+		},
+		{
+			name: 'Assign',
+			value: 'assign',
+			action: 'Assign task to members',
+			description: 'Assign members to a task',
+			routing: {
+				request: {
+					method: 'PUT',
+					url: '=/tasks/{{ typeof $parameter["taskId"] === "object" ? $parameter["taskId"].value : $parameter["taskId"] }}/assignees',
+				},
+			},
+		},
+		{
+			name: 'Link Tasks',
+			value: 'linkTask',
+			action: 'Link tasks together',
+			description: 'Create a link between tasks',
+			routing: {
+				request: {
+					method: 'POST',
+					url: '=/tasks/{{ typeof $parameter["taskId"] === "object" ? $parameter["taskId"].value : $parameter["taskId"] }}/link_task',
+				},
+			},
+		},
+		{
+			name: 'Remove Labels',
+			value: 'removeLabels',
+			action: 'Remove labels from task',
+			description: 'Remove labels/tags from a task',
+			routing: {
+				request: {
+					method: 'DELETE',
+					url: '=/tasks/{{ typeof $parameter["taskId"] === "object" ? $parameter["taskId"].value : $parameter["taskId"] }}/labels',
+				},
+			},
+		},
+		{
+			name: 'Unassign',
+			value: 'unassign',
+			action: 'Unassign members from task',
+			description: 'Remove assigned members from a task',
+			routing: {
+				request: {
+					method: 'DELETE',
+					url: '=/tasks/{{ typeof $parameter["taskId"] === "object" ? $parameter["taskId"].value : $parameter["taskId"] }}/assignees',
+				},
+			},
+		},
+		{
+			name: 'Uncomplete',
+			value: 'uncomplete',
+			action: 'Uncomplete a task',
+			description: 'Mark a task as not completed',
+			routing: {
+				request: {
+					method: 'DELETE',
+					url: '=/tasks/{{ typeof $parameter["taskId"] === "object" ? $parameter["taskId"].value : $parameter["taskId"] }}/complete',
+				},
+			},
+		},
+		{
+			name: 'Update',
+			value: 'update',
+			action: 'Update a task',
+			description: 'Update a task',
+			routing: {
+				request: {
+					method: 'PUT',
+					url: '=/tasks/{{ typeof $parameter["taskId"] === "object" ? $parameter["taskId"].value : $parameter["taskId"] }}',
+				},
+			},
+		},
+	],
+	default: 'getMany',
+},
 ];
 
 export const taskFields: INodeProperties[] = [
@@ -254,6 +348,22 @@ export const taskFields: INodeProperties[] = [
 			show: {
 				resource: ['task'],
 				operation: ['getMany', 'getPersonal'],
+			},
+		},
+		routing: {
+			send: {
+				paginate: '={{$value}}',
+			},
+			operations: {
+				pagination: {
+					type: 'offset',
+					properties: {
+						limitParameter: 'limit',
+						offsetParameter: 'offset',
+						pageSize: 100,
+						type: 'query',
+					},
+				},
 			},
 		},
 	},
@@ -278,6 +388,39 @@ export const taskFields: INodeProperties[] = [
 			send: {
 				type: 'query',
 				property: 'limit',
+			},
+			output: {
+				postReceive: [
+					{
+						type: 'limit',
+						properties: {
+							maxResults: '={{$value}}',
+						},
+					},
+				],
+			},
+		},
+	},
+	{
+		displayName: 'Offset',
+		name: 'offset',
+		type: 'number',
+		default: 0,
+		description: 'Number of records to skip (pagination)',
+		typeOptions: {
+			minValue: 0,
+		},
+		displayOptions: {
+			show: {
+				resource: ['task'],
+				operation: ['getMany', 'getPersonal'],
+				returnAll: [false],
+			},
+		},
+		routing: {
+			send: {
+				type: 'query',
+				property: 'offset',
 			},
 		},
 	},
@@ -307,32 +450,128 @@ export const taskFields: INodeProperties[] = [
 					},
 				},
 			},
-			{
-				displayName: 'Completed',
-				name: 'completed',
-				type: 'boolean',
-				default: false,
-				description: 'Whether to return completed tasks',
-				routing: {
-					send: {
-						type: 'query',
-						property: 'completed',
-					},
+		{
+			displayName: 'Completed',
+			name: 'completed',
+			type: 'boolean',
+			default: false,
+			description: 'Whether to return completed tasks',
+			routing: {
+				send: {
+					type: 'query',
+					property: 'completed',
 				},
 			},
-			{
-				displayName: 'Include Subtasks',
-				name: 'include_subtasks',
-				type: 'boolean',
-				default: false,
-				description: 'Whether to include subtasks',
-				routing: {
-					send: {
-						type: 'query',
-						property: 'include_subtasks',
+		},
+		{
+			displayName: 'Completed By',
+			name: 'completed_by',
+			type: 'resourceLocator',
+			default: { mode: 'list', value: '' },
+			description: 'Filter by member who completed the task',
+			modes: [
+				{
+					displayName: 'From List',
+					name: 'list',
+					type: 'list',
+					typeOptions: {
+						searchListMethod: 'getMembers',
+						searchable: true,
 					},
 				},
+				{
+					displayName: 'By ID',
+					name: 'id',
+					type: 'string',
+					placeholder: 'e.g. abc123',
+				},
+			],
+			routing: {
+				send: {
+					type: 'query',
+					property: 'completed_by',
+					value: '={{ typeof $value === "object" ? $value.value : $value }}',
+				},
 			},
+		},
+		{
+			displayName: 'Completed From',
+			name: 'completed_from',
+			type: 'dateTime',
+			default: '',
+			description: 'Filter tasks completed from this date',
+			routing: {
+				send: {
+					type: 'query',
+					property: 'completed_from',
+				},
+			},
+		},
+		{
+			displayName: 'Completed To',
+			name: 'completed_to',
+			type: 'dateTime',
+			default: '',
+			description: 'Filter tasks completed until this date',
+			routing: {
+				send: {
+					type: 'query',
+					property: 'completed_to',
+				},
+			},
+		},
+		{
+			displayName: 'Due Date From',
+			name: 'from',
+			type: 'dateTime',
+			default: '',
+			description: 'Filter tasks with due date from this date',
+			routing: {
+				send: {
+					type: 'query',
+					property: 'from',
+				},
+			},
+		},
+		{
+			displayName: 'Due Date To',
+			name: 'to',
+			type: 'dateTime',
+			default: '',
+			description: 'Filter tasks with due date until this date',
+			routing: {
+				send: {
+					type: 'query',
+					property: 'to',
+				},
+			},
+		},
+		{
+			displayName: 'Include Archived',
+			name: 'include_archived',
+			type: 'boolean',
+			default: false,
+			description: 'Whether to include archived tasks in results',
+			routing: {
+				send: {
+					type: 'query',
+					property: 'include_archived',
+				},
+			},
+		},
+		{
+			displayName: 'Include Subtasks',
+			name: 'include_subtasks',
+			type: 'boolean',
+			default: false,
+			description: 'Whether to include subtasks',
+			routing: {
+				send: {
+					type: 'query',
+					property: 'include_subtasks',
+				},
+			},
+		},
 			{
 				displayName: 'Member',
 				name: 'member_id',
@@ -392,19 +631,6 @@ export const taskFields: INodeProperties[] = [
 						type: 'query',
 						property: 'milestone_id',
 						value: '={{ typeof $value === "object" ? $value.value : $value }}',
-					},
-				},
-			},
-			{
-				displayName: 'Offset',
-				name: 'offset',
-				type: 'number',
-				default: 0,
-				description: 'Number of records to skip',
-				routing: {
-					send: {
-						type: 'query',
-						property: 'offset',
 					},
 				},
 			},
@@ -517,7 +743,7 @@ export const taskFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['task'],
-				operation: ['get', 'update', 'complete', 'uncomplete', 'clone', 'createSubtask'],
+				operation: ['get', 'update', 'complete', 'uncomplete', 'clone', 'createSubtask', 'archive', 'assign', 'unassign', 'addLabels', 'removeLabels', 'linkTask'],
 			},
 		},
 		modes: [
@@ -768,14 +994,63 @@ export const taskFields: INodeProperties[] = [
 			{
 				displayName: 'Assignees',
 				name: 'assignees',
-				type: 'string',
-				default: '',
-				description: 'Comma-separated list of member IDs to assign',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				placeholder: 'Add Assignee',
+				default: {},
+				description: 'Members to assign to the task',
+				options: [
+					{
+						displayName: 'Assignee',
+						name: 'assigneeValues',
+						values: [
+							{
+								displayName: 'Member',
+								name: 'id',
+								type: 'resourceLocator',
+								default: { mode: 'list', value: '' },
+								description: 'Member to assign',
+								modes: [
+									{
+										displayName: 'From List',
+										name: 'list',
+										type: 'list',
+										typeOptions: {
+											searchListMethod: 'getMembers',
+											searchable: true,
+										},
+									},
+									{
+										displayName: 'By ID',
+										name: 'id',
+										type: 'string',
+										placeholder: 'e.g. abc123',
+									},
+								],
+							},
+						],
+					},
+				],
 				routing: {
 					send: {
 						type: 'body',
 						property: 'assignees',
-						value: '={{$value ? $value.split(",").map(id => id.trim()) : []}}',
+						value: '={{ $value.assigneeValues ? $value.assigneeValues.map(a => typeof a.id === "object" ? a.id.value : a.id) : [] }}',
+					},
+				},
+			},
+			{
+				displayName: 'Banner URL',
+				name: 'banner',
+				type: 'string',
+				default: '',
+				description: 'URL of the banner image for the task',
+				routing: {
+					send: {
+						type: 'body',
+						property: 'banner',
 					},
 				},
 			},
@@ -783,6 +1058,9 @@ export const taskFields: INodeProperties[] = [
 				displayName: 'Description',
 				name: 'description',
 				type: 'string',
+				typeOptions: {
+					rows: 4,
+				},
 				default: '',
 				description: 'Description of the task',
 				routing: {
@@ -802,6 +1080,69 @@ export const taskFields: INodeProperties[] = [
 					send: {
 						type: 'body',
 						property: 'due_date',
+					},
+				},
+			},
+			{
+				displayName: 'Embed URL',
+				name: 'embed_url',
+				type: 'string',
+				default: '',
+				description: 'URL to embed in the task (e.g., Figma, YouTube)',
+				routing: {
+					send: {
+						type: 'body',
+						property: 'embed_url',
+					},
+				},
+			},
+			{
+				displayName: 'Labels',
+				name: 'labels',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				placeholder: 'Add Label',
+				default: {},
+				description: 'Labels/tags to add to the task',
+				options: [
+					{
+						displayName: 'Label',
+						name: 'labelValues',
+						values: [
+							{
+								displayName: 'Label',
+								name: 'id',
+								type: 'resourceLocator',
+								default: { mode: 'list', value: '' },
+								description: 'Label to add',
+								modes: [
+									{
+										displayName: 'From List',
+										name: 'list',
+										type: 'list',
+										typeOptions: {
+											searchListMethod: 'getTags',
+											searchable: true,
+										},
+									},
+									{
+										displayName: 'By ID',
+										name: 'id',
+										type: 'string',
+										placeholder: 'e.g. abc123',
+									},
+								],
+							},
+						],
+					},
+				],
+				routing: {
+					send: {
+						type: 'body',
+						property: 'labels',
+						value: '={{ $value.labelValues ? $value.labelValues.map(l => typeof l.id === "object" ? l.id.value : l.id) : [] }}',
 					},
 				},
 			},
@@ -837,6 +1178,19 @@ export const taskFields: INodeProperties[] = [
 				},
 			},
 			{
+				displayName: 'Order',
+				name: 'order',
+				type: 'number',
+				default: 0,
+				description: 'Order/position of the task in the list',
+				routing: {
+					send: {
+						type: 'body',
+						property: 'order',
+					},
+				},
+			},
+			{
 				displayName: 'Start Date',
 				name: 'start_date',
 				type: 'dateTime',
@@ -846,6 +1200,32 @@ export const taskFields: INodeProperties[] = [
 					send: {
 						type: 'body',
 						property: 'start_date',
+					},
+				},
+			},
+			{
+				displayName: 'Story Points',
+				name: 'story_points',
+				type: 'number',
+				default: 0,
+				description: 'Story points for the task (for agile workflows)',
+				routing: {
+					send: {
+						type: 'body',
+						property: 'story_points',
+					},
+				},
+			},
+			{
+				displayName: 'Template',
+				name: 'template_id',
+				type: 'string',
+				default: '',
+				description: 'ID of a task template to use',
+				routing: {
+					send: {
+						type: 'body',
+						property: 'template_id',
 					},
 				},
 			},
@@ -871,14 +1251,94 @@ export const taskFields: INodeProperties[] = [
 			{
 				displayName: 'Assignees',
 				name: 'assignees',
-				type: 'string',
-				default: '',
-				description: 'Comma-separated list of member IDs to assign',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				placeholder: 'Add Assignee',
+				default: {},
+				description: 'Members to assign to the task',
+				options: [
+					{
+						displayName: 'Assignee',
+						name: 'assigneeValues',
+						values: [
+							{
+								displayName: 'Member',
+								name: 'id',
+								type: 'resourceLocator',
+								default: { mode: 'list', value: '' },
+								description: 'Member to assign',
+								modes: [
+									{
+										displayName: 'From List',
+										name: 'list',
+										type: 'list',
+										typeOptions: {
+											searchListMethod: 'getMembers',
+											searchable: true,
+										},
+									},
+									{
+										displayName: 'By ID',
+										name: 'id',
+										type: 'string',
+										placeholder: 'e.g. abc123',
+									},
+								],
+							},
+						],
+					},
+				],
 				routing: {
 					send: {
 						type: 'body',
 						property: 'assignees',
-						value: '={{$value ? $value.split(",").map(id => id.trim()) : []}}',
+						value: '={{ $value.assigneeValues ? $value.assigneeValues.map(a => typeof a.id === "object" ? a.id.value : a.id) : [] }}',
+					},
+				},
+			},
+			{
+				displayName: 'Banner URL',
+				name: 'banner',
+				type: 'string',
+				default: '',
+				description: 'URL for the task banner image',
+				routing: {
+					send: {
+						type: 'body',
+						property: 'banner',
+					},
+				},
+			},
+			{
+				displayName: 'Dependency',
+				name: 'dependency',
+				type: 'resourceLocator',
+				default: { mode: 'list', value: '' },
+				description: 'Task that this task depends on',
+				modes: [
+					{
+						displayName: 'From List',
+						name: 'list',
+						type: 'list',
+						typeOptions: {
+							searchListMethod: 'getTasks',
+							searchable: true,
+						},
+					},
+					{
+						displayName: 'By ID',
+						name: 'id',
+						type: 'string',
+						placeholder: 'e.g. abc123',
+					},
+				],
+				routing: {
+					send: {
+						type: 'body',
+						property: 'dependency',
+						value: '={{ typeof $value === "object" ? $value.value : $value }}',
 					},
 				},
 			},
@@ -886,6 +1346,9 @@ export const taskFields: INodeProperties[] = [
 				displayName: 'Description',
 				name: 'description',
 				type: 'string',
+				typeOptions: {
+					rows: 4,
+				},
 				default: '',
 				description: 'Description of the task',
 				routing: {
@@ -905,6 +1368,69 @@ export const taskFields: INodeProperties[] = [
 					send: {
 						type: 'body',
 						property: 'due_date',
+					},
+				},
+			},
+			{
+				displayName: 'Embed URL',
+				name: 'embed_url',
+				type: 'string',
+				default: '',
+				description: 'URL to embed in the task (e.g., Figma, YouTube)',
+				routing: {
+					send: {
+						type: 'body',
+						property: 'embed_url',
+					},
+				},
+			},
+			{
+				displayName: 'Labels',
+				name: 'labels',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				placeholder: 'Add Label',
+				default: {},
+				description: 'Labels/tags to assign to the task',
+				options: [
+					{
+						displayName: 'Label',
+						name: 'labelValues',
+						values: [
+							{
+								displayName: 'Label',
+								name: 'id',
+								type: 'resourceLocator',
+								default: { mode: 'list', value: '' },
+								description: 'Label to add',
+								modes: [
+									{
+										displayName: 'From List',
+										name: 'list',
+										type: 'list',
+										typeOptions: {
+											searchListMethod: 'getTags',
+											searchable: true,
+										},
+									},
+									{
+										displayName: 'By ID',
+										name: 'id',
+										type: 'string',
+										placeholder: 'e.g. abc123',
+									},
+								],
+							},
+						],
+					},
+				],
+				routing: {
+					send: {
+						type: 'body',
+						property: 'labels',
+						value: '={{ $value.labelValues ? $value.labelValues.map(l => typeof l.id === "object" ? l.id.value : l.id) : [] }}',
 					},
 				},
 			},
@@ -953,6 +1479,32 @@ export const taskFields: INodeProperties[] = [
 				},
 			},
 			{
+				displayName: 'Order',
+				name: 'order',
+				type: 'number',
+				default: 0,
+				description: 'Order/position of the task in the list',
+				routing: {
+					send: {
+						type: 'body',
+						property: 'order',
+					},
+				},
+			},
+			{
+				displayName: 'Reminder',
+				name: 'reminder',
+				type: 'dateTime',
+				default: '',
+				description: 'Reminder date/time for the task',
+				routing: {
+					send: {
+						type: 'body',
+						property: 'reminder',
+					},
+				},
+			},
+			{
 				displayName: 'Start Date',
 				name: 'start_date',
 				type: 'dateTime',
@@ -962,6 +1514,19 @@ export const taskFields: INodeProperties[] = [
 					send: {
 						type: 'body',
 						property: 'start_date',
+					},
+				},
+			},
+			{
+				displayName: 'Story Points',
+				name: 'story_points',
+				type: 'number',
+				default: 0,
+				description: 'Story points for the task (for agile workflows)',
+				routing: {
+					send: {
+						type: 'body',
+						property: 'story_points',
 					},
 				},
 			},
@@ -1306,5 +1871,218 @@ export const taskFields: INodeProperties[] = [
 				description: 'Region for S3 (use us-east-1 for MinIO)',
 			},
 		],
+	},
+
+	{
+		displayName: 'Archive',
+		name: 'archived',
+		type: 'boolean',
+		required: true,
+		default: true,
+		description: 'Whether to archive (true) or unarchive (false) the task',
+		displayOptions: {
+			show: {
+				resource: ['task'],
+				operation: ['archive'],
+			},
+		},
+		routing: {
+			send: {
+				type: 'body',
+				property: 'archived',
+			},
+		},
+	},
+
+	{
+		displayName: 'Members',
+		name: 'assignees',
+		type: 'fixedCollection',
+		typeOptions: {
+			multipleValues: true,
+		},
+		placeholder: 'Add Member',
+		default: {},
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['task'],
+				operation: ['assign', 'unassign'],
+			},
+		},
+		options: [
+			{
+				displayName: 'Member',
+				name: 'memberValues',
+				values: [
+					{
+						displayName: 'Member',
+						name: 'id',
+						type: 'resourceLocator',
+						default: { mode: 'list', value: '' },
+						description: 'Member to assign/unassign',
+						modes: [
+							{
+								displayName: 'From List',
+								name: 'list',
+								type: 'list',
+								typeOptions: {
+									searchListMethod: 'getMembers',
+									searchable: true,
+								},
+							},
+							{
+								displayName: 'By ID',
+								name: 'id',
+								type: 'string',
+								placeholder: 'e.g. abc123',
+							},
+						],
+					},
+				],
+			},
+		],
+		routing: {
+			send: {
+				type: 'body',
+				property: 'assignees',
+				value: '={{ $value.memberValues ? $value.memberValues.map(m => typeof m.id === "object" ? m.id.value : m.id) : [] }}',
+			},
+		},
+	},
+
+	{
+		displayName: 'Labels',
+		name: 'labels',
+		type: 'fixedCollection',
+		typeOptions: {
+			multipleValues: true,
+		},
+		placeholder: 'Add Label',
+		default: {},
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['task'],
+				operation: ['addLabels', 'removeLabels'],
+			},
+		},
+		options: [
+			{
+				displayName: 'Label',
+				name: 'labelValues',
+				values: [
+					{
+						displayName: 'Label',
+						name: 'id',
+						type: 'resourceLocator',
+						default: { mode: 'list', value: '' },
+						description: 'Label/tag to add or remove',
+						modes: [
+							{
+								displayName: 'From List',
+								name: 'list',
+								type: 'list',
+								typeOptions: {
+									searchListMethod: 'getTags',
+									searchable: true,
+								},
+							},
+							{
+								displayName: 'By ID',
+								name: 'id',
+								type: 'string',
+								placeholder: 'e.g. abc123',
+							},
+						],
+					},
+				],
+			},
+		],
+		routing: {
+			send: {
+				type: 'body',
+				property: 'labels',
+				value: '={{ $value.labelValues ? $value.labelValues.map(l => typeof l.id === "object" ? l.id.value : l.id) : [] }}',
+			},
+		},
+	},
+
+	{
+		displayName: 'Tasks to Link',
+		name: 'linkedTasks',
+		type: 'fixedCollection',
+		typeOptions: {
+			multipleValues: true,
+		},
+		placeholder: 'Add Task to Link',
+		default: {},
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['task'],
+				operation: ['linkTask'],
+			},
+		},
+		options: [
+			{
+				displayName: 'Linked Task',
+				name: 'taskValues',
+				values: [
+					{
+						displayName: 'Task',
+						name: 'id',
+						type: 'resourceLocator',
+						default: { mode: 'list', value: '' },
+						description: 'Task to link',
+						modes: [
+							{
+								displayName: 'From List',
+								name: 'list',
+								type: 'list',
+								typeOptions: {
+									searchListMethod: 'getTasks',
+									searchable: true,
+								},
+							},
+							{
+								displayName: 'By ID',
+								name: 'id',
+								type: 'string',
+								placeholder: 'e.g. abc123',
+							},
+						],
+					},
+					{
+						displayName: 'Link Type',
+						name: 'type',
+						type: 'options',
+						options: [
+							{
+								name: 'Blocks',
+								value: 'blocks',
+							},
+							{
+								name: 'Blocked By',
+								value: 'blocked_by',
+							},
+							{
+								name: 'Related',
+								value: 'related',
+							},
+						],
+						default: 'related',
+						description: 'Type of link between tasks',
+					},
+				],
+			},
+		],
+		routing: {
+			send: {
+				type: 'body',
+				property: 'tasks',
+				value: '={{ $value.taskValues ? $value.taskValues.map(t => ({ task_id: typeof t.id === "object" ? t.id.value : t.id, type: t.type })) : [] }}',
+			},
+		},
 	},
 ];

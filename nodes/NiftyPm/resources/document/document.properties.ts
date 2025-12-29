@@ -25,6 +25,18 @@ export const documentOperations: INodeProperties[] = [
 				},
 			},
 			{
+				name: 'Create Personal',
+				value: 'createPersonal',
+				action: 'Create personal document',
+				description: 'Create a personal document',
+				routing: {
+					request: {
+						method: 'POST',
+						url: '/docs/personal',
+					},
+				},
+			},
+			{
 				name: 'Delete',
 				value: 'delete',
 				action: 'Delete a document',
@@ -52,7 +64,7 @@ export const documentOperations: INodeProperties[] = [
 				name: 'Get Many',
 				value: 'getMany',
 				action: 'Get many documents',
-				description: 'Get a list of documents',
+				description: 'Get a list of documents from a project and task',
 				routing: {
 					request: {
 						method: 'GET',
@@ -68,6 +80,50 @@ export const documentOperations: INodeProperties[] = [
 							},
 						],
 					},
+					operations: {
+						pagination: {
+							type: 'offset',
+							properties: {
+								limitParameter: 'limit',
+								offsetParameter: 'offset',
+								pageSize: 100,
+								type: 'query',
+							},
+						},
+					},
+				},
+			},
+			{
+				name: 'Get Personal',
+				value: 'getPersonal',
+				action: 'Get personal documents',
+				description: 'Get personal documents',
+				routing: {
+					request: {
+						method: 'GET',
+						url: '/docs/personal',
+					},
+					output: {
+						postReceive: [
+							{
+								type: 'rootProperty',
+								properties: {
+									property: 'docs',
+								},
+							},
+						],
+					},
+					operations: {
+						pagination: {
+							type: 'offset',
+							properties: {
+								limitParameter: 'limit',
+								offsetParameter: 'offset',
+								pageSize: 100,
+								type: 'query',
+							},
+						},
+					},
 				},
 			},
 			{
@@ -77,8 +133,20 @@ export const documentOperations: INodeProperties[] = [
 				description: 'Invite members to a document',
 				routing: {
 					request: {
-						method: 'POST',
-						url: '=/docs/{{$parameter["documentId"]}}/invite',
+						method: 'PUT',
+						url: '=/docs/{{$parameter["documentId"]}}/members',
+					},
+				},
+			},
+			{
+				name: 'Move to Project',
+				value: 'moveToProject',
+				action: 'Move document to project',
+				description: 'Move a document to another project',
+				routing: {
+					request: {
+						method: 'PUT',
+						url: '=/docs/{{$parameter["documentId"]}}/move_to_project',
 					},
 				},
 			},
@@ -104,6 +172,82 @@ export const documentFields: INodeProperties[] = [
 	//         document: getMany
 	// ----------------------------------
 	{
+		displayName: 'Project',
+		name: 'projectId',
+		type: 'resourceLocator',
+		required: true,
+		default: { mode: 'list', value: '' },
+		description: 'The project to get documents from. Select this first to load tasks.',
+		displayOptions: {
+			show: {
+				resource: ['document'],
+				operation: ['getMany'],
+			},
+		},
+		modes: [
+			{
+				displayName: 'From List',
+				name: 'list',
+				type: 'list',
+				typeOptions: {
+					searchListMethod: 'getProjects',
+					searchable: true,
+				},
+			},
+			{
+				displayName: 'By ID',
+				name: 'id',
+				type: 'string',
+				placeholder: 'e.g. abc123',
+			},
+		],
+		routing: {
+			send: {
+				type: 'query',
+				property: 'project_id',
+				value: '={{ typeof $value === "object" ? $value.value : $value }}',
+			},
+		},
+	},
+	{
+		displayName: 'Task',
+		name: 'taskId',
+		type: 'resourceLocator',
+		required: true,
+		default: { mode: 'list', value: '' },
+		description: 'The task to get documents from. Select a project first.',
+		displayOptions: {
+			show: {
+				resource: ['document'],
+				operation: ['getMany'],
+			},
+		},
+		modes: [
+			{
+				displayName: 'From List',
+				name: 'list',
+				type: 'list',
+				typeOptions: {
+					searchListMethod: 'getTasks',
+					searchable: true,
+				},
+			},
+			{
+				displayName: 'By ID',
+				name: 'id',
+				type: 'string',
+				placeholder: 'e.g. abc123',
+			},
+		],
+		routing: {
+			send: {
+				type: 'query',
+				property: 'task_id',
+				value: '={{ typeof $value === "object" ? $value.value : $value }}',
+			},
+		},
+	},
+	{
 		displayName: 'Return All',
 		name: 'returnAll',
 		type: 'boolean',
@@ -112,7 +256,23 @@ export const documentFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['document'],
-				operation: ['getMany'],
+				operation: ['getMany', 'getPersonal'],
+			},
+		},
+		routing: {
+			send: {
+				paginate: '={{$value}}',
+			},
+			operations: {
+				pagination: {
+					type: 'offset',
+					properties: {
+						limitParameter: 'limit',
+						offsetParameter: 'offset',
+						pageSize: 100,
+						type: 'query',
+					},
+				},
 			},
 		},
 	},
@@ -129,7 +289,7 @@ export const documentFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['document'],
-				operation: ['getMany'],
+				operation: ['getMany', 'getPersonal'],
 				returnAll: [false],
 			},
 		},
@@ -137,6 +297,39 @@ export const documentFields: INodeProperties[] = [
 			send: {
 				type: 'query',
 				property: 'limit',
+			},
+			output: {
+				postReceive: [
+					{
+						type: 'limit',
+						properties: {
+							maxResults: '={{$value}}',
+						},
+					},
+				],
+			},
+		},
+	},
+	{
+		displayName: 'Offset',
+		name: 'offset',
+		type: 'number',
+		default: 0,
+		description: 'Number of records to skip (pagination)',
+		typeOptions: {
+			minValue: 0,
+		},
+		displayOptions: {
+			show: {
+				resource: ['document'],
+				operation: ['getMany', 'getPersonal'],
+				returnAll: [false],
+			},
+		},
+		routing: {
+			send: {
+				type: 'query',
+				property: 'offset',
 			},
 		},
 	},
@@ -154,72 +347,194 @@ export const documentFields: INodeProperties[] = [
 		},
 		options: [
 			{
-				displayName: 'Archived',
-				name: 'archived',
-				type: 'boolean',
-				default: false,
-				description: 'Whether to return archived documents',
-				routing: {
-					send: {
-						type: 'query',
-						property: 'archived',
-					},
-				},
-			},
-			{
-				displayName: 'Offset',
-				name: 'offset',
-				type: 'number',
-				default: 0,
-				description: 'Number of records to skip',
-				routing: {
-					send: {
-						type: 'query',
-						property: 'offset',
-					},
-				},
-			},
-			{
-				displayName: 'Project ID',
-				name: 'project_id',
+				displayName: 'Author',
+				name: 'author',
 				type: 'string',
 				default: '',
-				description: 'Filter by project ID',
+				description: 'Filter by document author',
 				routing: {
 					send: {
 						type: 'query',
-						property: 'project_id',
+						property: 'author',
 					},
 				},
 			},
 			{
-				displayName: 'Type',
-				name: 'type',
+				displayName: 'Folder ID',
+				name: 'folder_id',
+				type: 'string',
+				default: '',
+				description: 'Filter by folder ID',
+				routing: {
+					send: {
+						type: 'query',
+						property: 'folder_id',
+					},
+				},
+			},
+			{
+				displayName: 'Name',
+				name: 'name',
+				type: 'string',
+				default: '',
+				description: 'Filter by document name',
+				routing: {
+					send: {
+						type: 'query',
+						property: 'name',
+					},
+				},
+			},
+			{
+				displayName: 'Parent Document ID',
+				name: 'parent_doc_id',
+				type: 'string',
+				default: '',
+				description: 'Filter by parent document ID',
+				routing: {
+					send: {
+						type: 'query',
+						property: 'parent_doc_id',
+					},
+				},
+			},
+			{
+				displayName: 'Sort',
+				name: 'sort',
 				type: 'options',
 				options: [
 					{
-						name: 'All',
-						value: '',
+						name: 'Ascending',
+						value: 'ascending',
 					},
 					{
-						name: 'Doc',
-						value: 'doc',
-					},
-					{
-						name: 'Embed',
-						value: 'embed',
-					},
-					{
-						name: 'External',
-						value: 'external',
+						name: 'Descending',
+						value: 'descending',
 					},
 				],
-				default: '',
-				description: 'Document type',
+				default: 'descending',
+				description: 'Sorting order',
 				routing: {
 					send: {
 						type: 'query',
-						property: 'type',
+						property: 'sort',
+					},
+				},
+			},
+			{
+				displayName: 'Tag',
+				name: 'tag',
+				type: 'string',
+				default: '',
+				description: 'Filter by document tag',
+				routing: {
+					send: {
+						type: 'query',
+						property: 'tag',
+					},
+				},
+			},
+		],
+	},
+	// Filters for getPersonal (different set of options)
+	{
+		displayName: 'Filters',
+		name: 'filters',
+		type: 'collection',
+		placeholder: 'Add Filter',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: ['document'],
+				operation: ['getPersonal'],
+			},
+		},
+		options: [
+			{
+				displayName: 'Author',
+				name: 'author',
+				type: 'string',
+				default: '',
+				description: 'Filter by document author',
+				routing: {
+					send: {
+						type: 'query',
+						property: 'author',
+					},
+				},
+			},
+			{
+				displayName: 'Folder ID',
+				name: 'folder_id',
+				type: 'string',
+				default: '',
+				description: 'Filter by folder ID',
+				routing: {
+					send: {
+						type: 'query',
+						property: 'folder_id',
+					},
+				},
+			},
+			{
+				displayName: 'Name',
+				name: 'name',
+				type: 'string',
+				default: '',
+				description: 'Filter by document name',
+				routing: {
+					send: {
+						type: 'query',
+						property: 'name',
+					},
+				},
+			},
+			{
+				displayName: 'Parent Document ID',
+				name: 'parent_doc_id',
+				type: 'string',
+				default: '',
+				description: 'Filter by parent document ID',
+				routing: {
+					send: {
+						type: 'query',
+						property: 'parent_doc_id',
+					},
+				},
+			},
+			{
+				displayName: 'Sort',
+				name: 'sort',
+				type: 'options',
+				options: [
+					{
+						name: 'Ascending',
+						value: 'ascending',
+					},
+					{
+						name: 'Descending',
+						value: 'descending',
+					},
+				],
+				default: 'descending',
+				description: 'Sorting order',
+				routing: {
+					send: {
+						type: 'query',
+						property: 'sort',
+					},
+				},
+			},
+			{
+				displayName: 'Tag',
+				name: 'tag',
+				type: 'string',
+				default: '',
+				description: 'Filter by document tag',
+				routing: {
+					send: {
+						type: 'query',
+						property: 'tag',
 					},
 				},
 			},
@@ -239,7 +554,7 @@ export const documentFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['document'],
-				operation: ['get', 'update', 'delete', 'inviteMembers'],
+				operation: ['get', 'update', 'delete', 'inviteMembers', 'moveToProject'],
 			},
 		},
 	},
@@ -257,7 +572,7 @@ export const documentFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['document'],
-				operation: ['create'],
+				operation: ['create', 'createPersonal'],
 			},
 		},
 		routing: {
@@ -268,22 +583,40 @@ export const documentFields: INodeProperties[] = [
 		},
 	},
 	{
-		displayName: 'Project ID',
+		displayName: 'Project',
 		name: 'projectId',
-		type: 'string',
+		type: 'resourceLocator',
 		required: true,
-		default: '',
-		description: 'The ID of the project',
+		default: { mode: 'list', value: '' },
+		description: 'The project to create the document in',
 		displayOptions: {
 			show: {
 				resource: ['document'],
 				operation: ['create'],
 			},
 		},
+		modes: [
+			{
+				displayName: 'From List',
+				name: 'list',
+				type: 'list',
+				typeOptions: {
+					searchListMethod: 'getProjects',
+					searchable: true,
+				},
+			},
+			{
+				displayName: 'By ID',
+				name: 'id',
+				type: 'string',
+				placeholder: 'e.g. abc123',
+			},
+		],
 		routing: {
 			send: {
 				type: 'body',
 				property: 'project_id',
+				value: '={{ typeof $value === "object" ? $value.value : $value }}',
 			},
 		},
 	},
@@ -327,6 +660,122 @@ export const documentFields: INodeProperties[] = [
 					},
 				},
 			},
+			{
+				displayName: 'Content',
+				name: 'content',
+				type: 'json',
+				default: '{}',
+				description: 'Document content as JSON',
+				routing: {
+					send: {
+						type: 'body',
+						property: 'content',
+					},
+				},
+			},
+			{
+				displayName: 'Folder ID',
+				name: 'folder_id',
+				type: 'string',
+				default: '',
+				description: 'Folder ID to place the document in',
+				routing: {
+					send: {
+						type: 'body',
+						property: 'folder_id',
+					},
+				},
+			},
+			{
+				displayName: 'Parent Document ID',
+				name: 'parent_doc_id',
+				type: 'string',
+				default: '',
+				description: 'Parent document ID',
+				routing: {
+					send: {
+						type: 'body',
+						property: 'parent_doc_id',
+					},
+				},
+			},
+			{
+				displayName: 'Task',
+				name: 'task_id',
+				type: 'resourceLocator',
+				default: { mode: 'list', value: '' },
+				description: 'Associate document with a task. Select a project first.',
+				modes: [
+					{
+						displayName: 'From List',
+						name: 'list',
+						type: 'list',
+						typeOptions: {
+							searchListMethod: 'getTasks',
+							searchable: true,
+						},
+					},
+					{
+						displayName: 'By ID',
+						name: 'id',
+						type: 'string',
+						placeholder: 'e.g. abc123',
+					},
+				],
+				routing: {
+					send: {
+						type: 'body',
+						property: 'task_id',
+						value: '={{ typeof $value === "object" ? $value.value : $value }}',
+					},
+				},
+			},
+			{
+				displayName: 'Type',
+				name: 'type',
+				type: 'options',
+				options: [
+					{
+						name: 'Doc',
+						value: 'doc',
+					},
+					{
+						name: 'Embed',
+						value: 'embed',
+					},
+					{
+						name: 'External',
+						value: 'external',
+					},
+				],
+				default: 'doc',
+				description: 'Document type',
+				routing: {
+					send: {
+						type: 'body',
+						property: 'type',
+					},
+				},
+			},
+		],
+	},
+
+	// ----------------------------------
+	//         document: createPersonal
+	// ----------------------------------
+	{
+		displayName: 'Additional Fields',
+		name: 'additionalFields',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: ['document'],
+				operation: ['createPersonal'],
+			},
+		},
+		options: [
 			{
 				displayName: 'Content',
 				name: 'content',
@@ -493,6 +942,7 @@ export const documentFields: INodeProperties[] = [
 		},
 		placeholder: 'Add Member',
 		default: {},
+		required: true,
 		displayOptions: {
 			show: {
 				resource: ['document'],
@@ -505,11 +955,28 @@ export const documentFields: INodeProperties[] = [
 				name: 'memberValues',
 				values: [
 					{
-						displayName: 'Member ID',
+						displayName: 'Member',
 						name: 'id',
-						type: 'string',
-						default: '',
-						description: 'ID of the member to invite',
+						type: 'resourceLocator',
+						default: { mode: 'list', value: '' },
+						description: 'Member to invite',
+						modes: [
+							{
+								displayName: 'From List',
+								name: 'list',
+								type: 'list',
+								typeOptions: {
+									searchListMethod: 'getMembers',
+									searchable: true,
+								},
+							},
+							{
+								displayName: 'By ID',
+								name: 'id',
+								type: 'string',
+								placeholder: 'e.g. abc123',
+							},
+						],
 					},
 					{
 						displayName: 'Permission',
@@ -539,8 +1006,78 @@ export const documentFields: INodeProperties[] = [
 			send: {
 				type: 'body',
 				property: 'members',
-				value: '={{$value.memberValues}}',
+				value: '={{ $value.memberValues ? $value.memberValues.map(m => ({ id: typeof m.id === "object" ? m.id.value : m.id, permission: m.permission })) : [] }}',
 			},
 		},
+	},
+
+	// ----------------------------------
+	//         document: moveToProject
+	// ----------------------------------
+	{
+		displayName: 'Target Project',
+		name: 'targetProjectId',
+		type: 'resourceLocator',
+		required: true,
+		default: { mode: 'list', value: '' },
+		description: 'The project to move the document to',
+		displayOptions: {
+			show: {
+				resource: ['document'],
+				operation: ['moveToProject'],
+			},
+		},
+		modes: [
+			{
+				displayName: 'From List',
+				name: 'list',
+				type: 'list',
+				typeOptions: {
+					searchListMethod: 'getProjects',
+					searchable: true,
+				},
+			},
+			{
+				displayName: 'By ID',
+				name: 'id',
+				type: 'string',
+				placeholder: 'e.g. abc123',
+			},
+		],
+		routing: {
+			send: {
+				type: 'body',
+				property: 'project_id',
+				value: '={{ typeof $value === "object" ? $value.value : $value }}',
+			},
+		},
+	},
+	{
+		displayName: 'Additional Options',
+		name: 'moveOptions',
+		type: 'collection',
+		placeholder: 'Add Option',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: ['document'],
+				operation: ['moveToProject'],
+			},
+		},
+		options: [
+			{
+				displayName: 'Folder ID',
+				name: 'folder_id',
+				type: 'string',
+				default: '',
+				description: 'Target folder ID in the new project',
+				routing: {
+					send: {
+						type: 'body',
+						property: 'folder_id',
+					},
+				},
+			},
+		],
 	},
 ];

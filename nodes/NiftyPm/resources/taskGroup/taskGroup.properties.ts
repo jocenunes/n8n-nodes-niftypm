@@ -13,6 +13,18 @@ export const taskGroupOperations: INodeProperties[] = [
 		},
 		options: [
 			{
+				name: 'Assign Members',
+				value: 'assignMembers',
+				action: 'Assign members to task group',
+				description: 'Assign members to a task group (status)',
+				routing: {
+					request: {
+						method: 'PUT',
+						url: '=/taskgroups/{{ typeof $parameter["taskGroupId"] === "object" ? $parameter["taskGroupId"].value : $parameter["taskGroupId"] }}/assignees',
+					},
+				},
+			},
+			{
 				name: 'Create',
 				value: 'create',
 				action: 'Create a task group',
@@ -32,34 +44,80 @@ export const taskGroupOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'DELETE',
-						url: '=/taskgroups/{{$parameter["taskGroupId"]}}',
+						url: '=/taskgroups/{{ typeof $parameter["taskGroupId"] === "object" ? $parameter["taskGroupId"].value : $parameter["taskGroupId"] }}',
 					},
 				},
 			},
 			{
-				name: 'Get Many',
-				value: 'getMany',
-				action: 'Get many task groups',
-				description: 'Get a list of task groups (statuses) for a project',
+				name: 'Get',
+				value: 'get',
+				action: 'Get a task group',
+				description: 'Get a task group (status) by ID',
 				routing: {
 					request: {
 						method: 'GET',
-						url: '/taskgroups',
-						qs: {
-							archived: false,
-							limit: 100,
-							sort: 'ascending',
+						url: '=/taskgroups/{{ typeof $parameter["taskGroupId"] === "object" ? $parameter["taskGroupId"].value : $parameter["taskGroupId"] }}',
+					},
+				},
+			},
+		{
+			name: 'Get Many',
+			value: 'getMany',
+			action: 'Get many task groups',
+			description: 'Get a list of task groups (statuses) for a project',
+			routing: {
+				request: {
+					method: 'GET',
+					url: '/taskgroups',
+					qs: {
+						archived: false,
+						sort: 'ascending',
+					},
+				},
+				output: {
+					postReceive: [
+						{
+							type: 'rootProperty',
+							properties: {
+								property: 'items',
+							},
+						},
+					],
+				},
+				operations: {
+					pagination: {
+						type: 'offset',
+						properties: {
+							limitParameter: 'limit',
+							offsetParameter: 'offset',
+							pageSize: 100,
+							type: 'query',
 						},
 					},
-					output: {
-						postReceive: [
-							{
-								type: 'rootProperty',
-								properties: {
-									property: 'items',
-								},
-							},
-						],
+				},
+			},
+		},
+			{
+				name: 'Move Tasks',
+				value: 'moveTasks',
+				action: 'Move all tasks from task group',
+				description: 'Move all tasks from one task group to another',
+				routing: {
+					request: {
+						method: 'POST',
+						url: '=/taskgroups/{{ typeof $parameter["taskGroupId"] === "object" ? $parameter["taskGroupId"].value : $parameter["taskGroupId"] }}/move',
+					},
+				},
+			},
+			{
+				name: 'Unassign Members',
+				value: 'unassignMembers',
+				action: 'Unassign members from task group',
+				description: 'Remove members from a task group (status)',
+				routing: {
+					request: {
+						method: 'DELETE',
+						url: '=/taskgroups/{{ typeof $parameter["taskGroupId"] === "object" ? $parameter["taskGroupId"].value : $parameter["taskGroupId"] }}/assignees',
 					},
 				},
 			},
@@ -71,7 +129,7 @@ export const taskGroupOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'PUT',
-						url: '=/taskgroups/{{$parameter["taskGroupId"]}}',
+						url: '=/taskgroups/{{ typeof $parameter["taskGroupId"] === "object" ? $parameter["taskGroupId"].value : $parameter["taskGroupId"] }}',
 					},
 				},
 			},
@@ -84,6 +142,92 @@ export const taskGroupFields: INodeProperties[] = [
 	// ----------------------------------
 	//         taskGroup: getMany
 	// ----------------------------------
+	{
+		displayName: 'Return All',
+		name: 'returnAll',
+		type: 'boolean',
+		default: false,
+		description: 'Whether to return all results or only up to a given limit',
+		displayOptions: {
+			show: {
+				resource: ['taskGroup'],
+				operation: ['getMany'],
+			},
+		},
+		routing: {
+			send: {
+				paginate: '={{$value}}',
+			},
+			operations: {
+				pagination: {
+					type: 'offset',
+					properties: {
+						limitParameter: 'limit',
+						offsetParameter: 'offset',
+						pageSize: 100,
+						type: 'query',
+					},
+				},
+			},
+		},
+	},
+	{
+		displayName: 'Limit',
+		name: 'limit',
+		type: 'number',
+		default: 25,
+		description: 'Max number of results to return',
+		typeOptions: {
+			minValue: 1,
+			maxValue: 100,
+		},
+		displayOptions: {
+			show: {
+				resource: ['taskGroup'],
+				operation: ['getMany'],
+				returnAll: [false],
+			},
+		},
+		routing: {
+			send: {
+				type: 'query',
+				property: 'limit',
+			},
+			output: {
+				postReceive: [
+					{
+						type: 'limit',
+						properties: {
+							maxResults: '={{$value}}',
+						},
+					},
+				],
+			},
+		},
+	},
+	{
+		displayName: 'Offset',
+		name: 'offset',
+		type: 'number',
+		default: 0,
+		description: 'Number of records to skip (pagination)',
+		typeOptions: {
+			minValue: 0,
+		},
+		displayOptions: {
+			show: {
+				resource: ['taskGroup'],
+				operation: ['getMany'],
+				returnAll: [false],
+			},
+		},
+		routing: {
+			send: {
+				type: 'query',
+				property: 'offset',
+			},
+		},
+	},
 	{
 		displayName: 'Project',
 		name: 'projectId',

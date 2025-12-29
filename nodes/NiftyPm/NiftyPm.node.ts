@@ -36,6 +36,7 @@ export class NiftyPm implements INodeType {
 		icon: 'file:niftypm.svg',
 		group: ['transform'],
 		version: 1,
+		usableAsTool: true,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
 		description: 'Interact with Nifty PM API for project management',
 		defaults: {
@@ -53,7 +54,6 @@ export class NiftyPm implements INodeType {
 			baseURL: 'https://openapi.niftypm.com/api/v1.0',
 			headers: {
 				Accept: 'application/json',
-				'Content-Type': 'application/json',
 			},
 		},
 		properties: [
@@ -384,7 +384,7 @@ export class NiftyPm implements INodeType {
 						},
 					);
 
-					const members = response.members || response || [];
+					const members = response.items || response || [];
 					let results: INodeListSearchItems[] = members.map((member: { id: string; name: string; email?: string }) => ({
 						name: member.name || member.email || member.id,
 						value: member.id,
@@ -509,12 +509,12 @@ export class NiftyPm implements INodeType {
 						'niftyPmOAuth2Api',
 						{
 							method: 'GET',
-							url: 'https://openapi.niftypm.com/api/v1.0/portfolios',
+							url: 'https://openapi.niftypm.com/api/v1.0/subteams',
 							json: true,
 						},
 					);
 
-					const portfolios = response.portfolios || response || [];
+					const portfolios = response.subteams || response || [];
 					let results: INodeListSearchItems[] = portfolios.map((portfolio: { id: string; name: string }) => ({
 						name: portfolio.name,
 						value: portfolio.id,
@@ -536,48 +536,8 @@ export class NiftyPm implements INodeType {
 				this: ILoadOptionsFunctions,
 				filter?: string,
 			): Promise<INodeListSearchResult> {
-				let projectId = '';
-
-				// Try multiple parameter names for projectId
-				const parameterNames = ['projectId', 'targetProjectId'];
-
-				for (const paramName of parameterNames) {
-					if (projectId) break;
-
-					try {
-						const param = this.getCurrentNodeParameter(paramName);
-						projectId = extractResourceLocatorValue(param);
-					} catch {
-						// Continue
-					}
-
-					if (!projectId) {
-						try {
-							const param = this.getNodeParameter(paramName, null);
-							projectId = extractResourceLocatorValue(param);
-						} catch {
-							// Continue
-						}
-					}
-				}
-
-				// Also try filters.project_id
-				if (!projectId) {
-					try {
-						const filters = this.getCurrentNodeParameter('filters') as Record<string, unknown> | undefined;
-						if (filters?.project_id) {
-							projectId = extractResourceLocatorValue(filters.project_id);
-						}
-					} catch {
-						// Not in filters context
-					}
-				}
-
-				if (!projectId) {
-					return { results: [] };
-				}
-
 				try {
+					// Labels/Tags API is global for the team, doesn't accept project_id
 					const response = await this.helpers.requestWithAuthentication.call(
 						this,
 						'niftyPmOAuth2Api',
@@ -585,13 +545,14 @@ export class NiftyPm implements INodeType {
 							method: 'GET',
 							url: 'https://openapi.niftypm.com/api/v1.0/labels',
 							qs: {
-								project_id: projectId,
+								limit: 100,
+								offset: 0,
 							},
 							json: true,
 						},
 					);
 
-					const tags = response.labels || response || [];
+					const tags = response.items || response || [];
 					let results: INodeListSearchItems[] = tags.map((tag: { id: string; name: string }) => ({
 						name: tag.name,
 						value: tag.id,
